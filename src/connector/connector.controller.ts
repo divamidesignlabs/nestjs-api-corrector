@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { MESSAGES, ERROR_TYPES, AUTH_TYPES } from './constants';
-import { CorrectorEngine } from './services/corrector-engine.service';
+import { ConnectorEngine } from './services/connector-engine.service';
 import { MappingRegistryService } from './services/mapping-registry.service';
 import {
   ConnectorRequest,
@@ -16,17 +16,17 @@ import {
 import { AuthStrategyFactory } from './strategies/auth.strategy';
 
 @Controller('connector')
-export class CorrectorController {
-  private readonly logger = new Logger(CorrectorController.name);
+export class ConnectorController {
+  private readonly logger = new Logger(ConnectorController.name);
 
   constructor(
-    private readonly correctorEngine: CorrectorEngine,
+    private readonly connectorEngine: ConnectorEngine,
     private readonly mappingRegistry: MappingRegistryService,
     private readonly authFactory: AuthStrategyFactory,
   ) {}
 
   @Post('execute')
-  async executeCorrection(@Body() requestData: ConnectorRequest) {
+  async executeConnector(@Body() requestData: ConnectorRequest) {
     const { connectorKey, authConfig, headerData, queryParams, payload } = requestData;
 
     try {
@@ -64,7 +64,7 @@ export class CorrectorController {
       };
 
       // 4. Call Engine
-      const result = await this.correctorEngine.execute(
+      const result = await this.connectorEngine.executeConnector(
         { ...mapping.mappingConfig, authConfig: effectiveAuth },
         payload,
         context,

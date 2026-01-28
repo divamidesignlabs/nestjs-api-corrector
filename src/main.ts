@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { CorrectorModule } from './corrector/corrector.module';
+import { ConnectorModule } from './connector/connector.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(CorrectorModule.forRoot({
+  const app = await NestFactory.create(ConnectorModule.forRoot({
     mappingRepository: {} as any, // Only for demo compilation
   }));
 

@@ -1,22 +1,22 @@
 import { Module, Global, DynamicModule, Provider } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { CorrectorEngine } from './services/corrector-engine.service';
+import { ConnectorEngine } from './services/connector-engine.service';
 import { TransformerService } from './services/transformer.service';
 import { TargetApiCaller } from './services/target-api-caller.service';
 import { AuthStrategyFactory } from './strategies/auth.strategy';
 import { MappingRegistryService } from './services/mapping-registry.service';
-import { CorrectorController } from './corrector.controller';
+import { ConnectorController } from './connector.controller';
 import { MAPPING_REPOSITORY } from './interfaces/mapping-repository.interface';
-import { CorrectorModuleOptions } from './interfaces/corrector-module-options.interface';
-import { CORRECTOR_OPTIONS, MESSAGES } from './constants';
+import { ConnectorModuleOptions } from './interfaces/connector-module-options.interface';
+import { CONNECTOR_OPTIONS, MESSAGES } from './constants';
 
 @Global()
 @Module({})
-export class CorrectorModule {
-  static forRoot(options: CorrectorModuleOptions): DynamicModule {
+export class ConnectorModule {
+  static forRoot(options: ConnectorModuleOptions): DynamicModule {
     const providers: Provider[] = [
       ...this.getCoreProviders(),
-      { provide: CORRECTOR_OPTIONS, useValue: options },
+      { provide: CONNECTOR_OPTIONS, useValue: options },
       this.getRepositoryProvider(options),
     ];
     return this.assembleModule(providers);
@@ -25,13 +25,13 @@ export class CorrectorModule {
   static forRootAsync(options: {
     useFactory: (
       ...args: any[]
-    ) => Promise<CorrectorModuleOptions> | CorrectorModuleOptions;
+    ) => Promise<ConnectorModuleOptions> | ConnectorModuleOptions;
     inject?: any[];
   }): DynamicModule {
     const providers: Provider[] = [
       ...this.getCoreProviders(),
       {
-        provide: CORRECTOR_OPTIONS,
+        provide: CONNECTOR_OPTIONS,
         useFactory: options.useFactory,
         inject: options.inject || [],
       },
@@ -55,7 +55,7 @@ export class CorrectorModule {
 
   private static getCoreProviders(): Provider[] {
     return [
-      CorrectorEngine,
+      ConnectorEngine,
       TransformerService,
       TargetApiCaller,
       AuthStrategyFactory,
@@ -63,7 +63,7 @@ export class CorrectorModule {
     ];
   }
 
-  private static getRepositoryProvider(options: CorrectorModuleOptions): Provider {
+  private static getRepositoryProvider(options: ConnectorModuleOptions): Provider {
     if (options.mappingRepository) {
       return { provide: MAPPING_REPOSITORY, useValue: options.mappingRepository };
     }
@@ -79,11 +79,11 @@ export class CorrectorModule {
 
   private static assembleModule(providers: Provider[]): DynamicModule {
     return {
-      module: CorrectorModule,
+      module: ConnectorModule,
       imports: [HttpModule],
-      controllers: [CorrectorController],
+      controllers: [ConnectorController],
       providers,
-      exports: [CorrectorEngine, TransformerService, MappingRegistryService],
+      exports: [ConnectorEngine, TransformerService, MappingRegistryService],
     };
   }
 }

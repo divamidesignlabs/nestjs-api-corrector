@@ -1,11 +1,11 @@
-# NestJS Corrector Framework: Deep Technical Execution Flow
+# NestJS Connector Framework: Deep Technical Execution Flow
 
 This document provides a line-by-line technical breakdown of the framework's internal execution cycle.
 
 ---
 
 ## **Phase 1: Entry & Configuration Guard**
-**File:** `src/corrector/corrector.controller.ts`
+**File:** `src/connector/connector.controller.ts`
 
 ### **1. Configuration Lookup**
 - **Action**: Fetches mapping from DB via `mappingRegistry.findByIdOrName(connectorKey)`.
@@ -26,7 +26,7 @@ This document provides a line-by-line technical breakdown of the framework's int
 ---
 
 ## **Phase 2: The Orchestrator (The Engine)**
-**File:** `src/corrector/services/corrector-engine.service.ts`
+**File:** `src/connector/services/connector-engine.service.ts`
 
 ### **4. Finalising the HTTP Method**
 - **Enforcement**: The framework strictly uses the method defined in the database (`GET`, `POST`, etc.). It ignores the method of the incoming request to the controller.
@@ -38,7 +38,7 @@ This document provides a line-by-line technical breakdown of the framework's int
 ---
 
 ## **Phase 3: Data Transformation (The Brain)**
-**File:** `src/corrector/services/transformer.service.ts`
+**File:** `src/connector/services/transformer.service.ts`
 
 ### **6. Object Reshaping Logic (`transformObject`)**
 - **Field-Level Loop**: Iterates through every mapping rule.
@@ -53,7 +53,7 @@ This document provides a line-by-line technical breakdown of the framework's int
 ---
 
 ## **Phase 4: Network & Execution**
-**File:** `src/corrector/services/target-api-caller.service.ts`
+**File:** `src/connector/services/target-api-caller.service.ts`
 
 ### **8. Auth Header Injection**
 - **Action**: The strategy (e.g., `BearerAuthProvider`) injects the final credentials.
@@ -66,7 +66,7 @@ This document provides a line-by-line technical breakdown of the framework's int
 ---
 
 ## **Phase 5: Standardized Error Response**
-**File:** `src/corrector/corrector.controller.ts` (`handleError`)
+**File:** `src/connector/connector.controller.ts` (`handleError`)
 
 ### **10. Structured Feedback**
 - **CLIENT_ERROR (400/401)**: For missing keys, auth failures, or validation errors.

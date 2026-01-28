@@ -1,4 +1,4 @@
-export const CORRECTOR_OPTIONS = 'CORRECTOR_OPTIONS';
+export const CONNECTOR_OPTIONS = 'CONNECTOR_OPTIONS';
 
 export const MESSAGES = {
   ERROR: {

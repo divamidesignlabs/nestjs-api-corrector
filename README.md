@@ -44,7 +44,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { 
-  CorrectorModule, 
+  ConnectorModule, 
   TypeOrmMappingRepository, 
   IntegrationMappingEntity 
 } from 'nestjs-api-connector';
@@ -57,7 +57,7 @@ import {
       synchronize: false, 
     }),
 
-    CorrectorModule.forRootAsync({
+    ConnectorModule.forRootAsync({
       inject: [DataSource],
       useFactory: (dataSource: DataSource) => ({
         mappingRepository: new TypeOrmMappingRepository(
@@ -74,15 +74,15 @@ export class AppModule {}
 
 ### 3. Using the Service
 
-Inject `CorrectorEngine` to execute integrations programmatically.
+Inject `ConnectorEngine` to execute integrations programmatically.
 
 ```typescript
 @Injectable()
 export class MyService {
-  constructor(private readonly corrector: CorrectorEngine) {}
+  constructor(private readonly connector: ConnectorEngine) {}
 
   async syncData() {
-    return await this.corrector.execute('get-products', {
+    return await this.connector.executeConnector('get-products', {
       category: 'electronics',
     });
   }

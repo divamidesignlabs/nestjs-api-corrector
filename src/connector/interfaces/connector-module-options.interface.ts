@@ -1,6 +1,6 @@
 import { IMappingRepository } from './mapping-repository.interface';
 
-export interface CorrectorModuleOptions {
+export interface ConnectorModuleOptions {
   /**
    * Direct instance of IMappingRepository (use this for simple cases)
    */

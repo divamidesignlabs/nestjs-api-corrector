@@ -12,8 +12,8 @@ import * as jsonpath from 'jsonpath';
 import { MESSAGES } from '../constants';
 
 @Injectable()
-export class CorrectorEngine {
-  private readonly logger = new Logger(CorrectorEngine.name);
+export class ConnectorEngine {
+  private readonly logger = new Logger(ConnectorEngine.name);
 
   constructor(
     private readonly transformer: TransformerService,
@@ -25,7 +25,7 @@ export class CorrectorEngine {
    * Main entry point: Executes the full correction flow.
    * This is the orchestrator that manages the lifecycle of a request.
    */
-  async execute(
+  async executeConnector(
     mapping: MappingConfig,
     sourcePayload: any,
     context?: ExecuteContext,

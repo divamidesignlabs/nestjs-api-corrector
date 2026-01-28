@@ -1,8 +1,8 @@
-# 📖 nestjs-api-corrector - Knowledge Transfer
+# 📖 nestjs-api-connector - Knowledge Transfer
 
 ## 🚀 Overview
 
-**nestjs-api-corrector** is a dynamic API integration library for NestJS. It acts as a "Corrector" or "Bridge" layer that sits between your application and external APIs. Instead of hardcoding API calls, you define them as **data configuration** (JSON).
+**nestjs-api-connector** is a dynamic API integration library for NestJS. It acts as a "Connector" or "Bridge" layer that sits between your application and external APIs. Instead of hardcoding API calls, you define them as **data configuration** (JSON).
 
 ### 🌟 Key Features
 
@@ -22,7 +22,7 @@
 The library follows a modular architecture:
 
 **Modules:**
-*   `CorrectorModule`: The main module.
+*   `ConnectorModule`: The main module.
 *   `TransformerService`: Handles JSON transformation (Data Mapping).
 *   `TargetApiCaller`: Makes the actual HTTP calls (Axios wrapper).
 *   `MappingRegistryService`: Loads configuration from the repository.
@@ -42,13 +42,13 @@ The library follows a modular architecture:
 ### 1. Installation
 
 ```bash
-npm install nestjs-api-corrector
+npm install nestjs-api-connector
 ```
 
 ### 2. Configuration (`app.module.ts`)
 
 ```typescript
-import { CorrectorModule, TypeOrmMappingRepository, TypeOrmAuditRepository, IntegrationMappingEntity, CorrectorAuditEntity } from 'nestjs-api-corrector';
+import { ConnectorModule, TypeOrmMappingRepository, TypeOrmAuditRepository, IntegrationMappingEntity, ConnectorAuditEntity } from 'nestjs-api-connector';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -57,14 +57,14 @@ import { DataSource } from 'typeorm';
       // connection options...
       entities: [
         IntegrationMappingEntity, 
-        // CorrectorAuditEntity, // Optional: Only if using DB Auditing
+        // ConnectorAuditEntity, // Optional: Only if using DB Auditing
         // ... your other app entities
       ],
       synchronize: true, // Auto-create tables (Dev only)
     }),
     
-    // Configure Corrector
-    CorrectorModule.forRootAsync({
+    // Configure Connector
+    ConnectorModule.forRootAsync({
       inject: [DataSource],
       useFactory: (dataSource: DataSource) => ({
         mappingRepository: new TypeOrmMappingRepository(dataSource.getRepository(IntegrationMappingEntity)),
@@ -79,10 +79,10 @@ export class AppModule {}
 ### 3. Calling an API
 
 ```typescript
-constructor(private corrector: CorrectorEngine) {}
+constructor(private connector: ConnectorEngine) {}
 
 async syncData() {
-  const result = await this.corrector.execute(
+  const result = await this.connector.executeConnector(
     'my-connector-name', // ID or Name from Database
     { someInput: 'value' } // Payload
   );
@@ -106,9 +106,9 @@ We have verified the library with the following live tests:
 
 ```
 src/
-├── corrector/
+├── connector/
 │   ├── services/
-│   │   ├── corrector-engine.service.ts  # Core Logic
+│   │   ├── connector-engine.service.ts  # Core Logic
 │   │   ├── target-api-caller.service.ts # HTTP Client
 │   │   └── transformer.service.ts       # JQ/JSONPath Logic
 │   ├── repositories/                    # TypeORM Implementations
