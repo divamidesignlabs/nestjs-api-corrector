@@ -11,7 +11,7 @@
 
 ## ✨ Features
 
-*   **Dynamic Configuration**: Define API endpoints, methods, and auth in your DB.
+*   **Dynamic Configuration**: Define API endpoints, methods, and auth type in your DB.
 *   **Zero-Code Updates**: Change target URLs or field mappings without redeploying code.
 *   **Robust Authentication**: Supported strategies (Bearer, Basic, ApiKey, OAuth2) with strict database priority.
 *   **High Performance Transformation**: Transform requests and responses using JSONPath or Custom Javascript with optimized array processing.
