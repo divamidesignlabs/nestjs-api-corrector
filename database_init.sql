@@ -32,8 +32,17 @@ VALUES (
         },
         "authConfig": { "authType": "NONE", "config": {} },
         "responseMapping": {
-            "type": "CUSTOM",
-            "logic": "var transformUser = function(u) { return { userId: u.id, username: u.username, fullName: u.name, email: u.email }; }; if (Array.isArray(value)) { return { users: value.map(transformUser), count: value.length }; } else { return { user: transformUser(value) }; }"
+            "type": "ARRAY",
+            "root": "$",
+            "outputWrapper": "$.users",
+            "includeCount": true,
+            "countPath": "$.count",
+            "mappings": [
+                { "source": "$.id", "target": "$.userId" },
+                { "source": "$.username", "target": "$.username" },
+                { "source": "$.name", "target": "$.fullName" },
+                { "source": "$.email", "target": "$.email" }
+            ]
         }
     }'::jsonb
 ) ON CONFLICT (name) DO UPDATE SET mapping_config = EXCLUDED.mapping_config;

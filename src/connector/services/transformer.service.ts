@@ -1,49 +1,42 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as jsonpath from 'jsonpath';
 import {
   RequestMapping,
   ResponseMapping,
-  TransformDefinition,
 } from '../interfaces/mapping-config.interface';
 import { MESSAGES } from '../constants';
 
 @Injectable()
 export class TransformerService {
-  private readonly logger = new Logger(TransformerService.name);
 
   /**
    * Main entry point for data transformation.
-   * Supports OBJECT, ARRAY, CUSTOM, and DIRECT mapping types.
+   * Supports OBJECT, ARRAY, and DIRECT mapping types.
    */
   transform(
     sourceData: any,
     mapping: RequestMapping | ResponseMapping,
-    customTransforms?: Record<string, TransformDefinition>,
   ): any {
     if (!mapping || mapping.type === 'DIRECT') return sourceData;
-
+ 
     // Orchestrate based on mapping type
     switch (mapping.type) {
       case 'ARRAY':
-        return this.transformArray(sourceData, mapping as ResponseMapping, customTransforms);
-      case 'CUSTOM':
-        return mapping.logic ? this.executeCustomLogic(sourceData, mapping.logic) : sourceData;
+        return this.transformArray(sourceData, mapping as ResponseMapping);
       case 'OBJECT':
       default:
-        return this.transformObject(sourceData, mapping, customTransforms);
+        return this.transformObject(sourceData, mapping);
     }
   }
 
   private transformArray(
     source: any,
     mapping: ResponseMapping,
-    customTransforms?: Record<string, TransformDefinition>,
   ): any {
     if (!mapping.root) return [];
     
     const rootArray = this.getValue(source, mapping.root);
     if (!Array.isArray(rootArray)) {
-      this.logger.warn(MESSAGES.ERROR.ROOT_ARRAY_NOT_FOUND(mapping.root));
       return [];
     }
 
@@ -51,7 +44,7 @@ export class TransformerService {
     const itemMapping: ResponseMapping = { ...mapping, type: 'OBJECT', root: undefined };
 
     const transformedList = rootArray.map((item: any) => 
-      this.transformObject(item, itemMapping, customTransforms)
+      this.transformObject(item, itemMapping)
     );
 
     if (mapping.outputWrapper) {
@@ -66,7 +59,6 @@ export class TransformerService {
   private transformObject(
     source: any,
     mapping: RequestMapping | ResponseMapping,
-    customTransforms?: Record<string, TransformDefinition>,
   ): any {
     const result = {};
 
@@ -85,14 +77,14 @@ export class TransformerService {
 
           // Apply transformations if defined
           const transformedValue = mapItem.transform 
-            ? this.applyTransform(value, mapItem.transform, customTransforms)
+            ? this.applyTransform(value, mapItem.transform)
             : value;
 
           if (transformedValue !== undefined) {
             this.setValue(result, mapItem.target, transformedValue);
           }
         } catch (error: any) {
-          this.logger.warn(MESSAGES.ERROR.TRANSFORM_FAILED(mapItem.source, error.message));
+          // Silent skip on field transform error
         }
       }
     }
@@ -137,7 +129,6 @@ export class TransformerService {
   private applyTransform(
     value: any,
     transformName: string,
-    customTransforms?: Record<string, TransformDefinition>,
   ): any {
     // 1. Core Built-in Utilities
     const builtInTransforms: Record<string, (v: any) => any> = {
@@ -152,25 +143,10 @@ export class TransformerService {
       return builtInTransforms[transformName](value);
     }
 
-    // 2. Configurable Custom Transforms
-    if (customTransforms?.[transformName]) {
-      return this.executeCustomLogic(value, customTransforms[transformName].logic);
-    }
-
     return value;
   }
 
-  private executeCustomLogic(value: any, logicBody: string): any {
-    try {
-      // Create a dynamic function context
-      /* eslint-disable @typescript-eslint/no-implied-eval */
-      const fn = new Function('value', logicBody);
-      return fn(value);
-    } catch (e: any) {
-      this.logger.error(MESSAGES.ERROR.CUSTOM_TRANSFORM_ERROR(e.message));
-      return { error: `Script Error: ${e.message}` };
-    }
-  }
+
 
   /**
    * Deep set a value on an object using a dot-notation path.

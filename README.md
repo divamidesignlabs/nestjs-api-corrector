@@ -32,8 +32,12 @@ npm install nestjs-api-connector
 
 ### 1. Database Setup
 
-You only need one table: `connector_mappings_config`.
-Refer to `database_init.sql` for the PostgreSQL structure.
+The library includes a `database_init.sql` file in the root directory. You can use this to initialize your PostgreSQL database.
+
+*   **Tables Created**: `connector_mappings_config`
+*   **Columns**: `id`, `name`, `source_system`, `target_system`, `mapping_config`, `created_at`, `updated_at`.
+
+You can also create a **Custom Table Name** (see below).
 
 ### 2. Import Module in `AppModule`
 
@@ -72,22 +76,67 @@ export class AppModule {}
 
 #### B. Using Custom Table Name (Optional)
 
-If you prefer a custom table name (e.g., `my_custom_connectors`):
+If you prefer a custom table name (e.g., `my_custom_connectors`), use the `getMappingEntity` utility:
 
 ```typescript
 import { getMappingEntity, TypeOrmMappingRepository } from 'nestjs-api-connector';
 
-// 1. Create the entity with your custom table name
+// 1. Create the entity class with your custom table name
 const MyCustomEntity = getMappingEntity('my_custom_connectors');
 
 @Module({
   imports: [
+    // Register the custom entity in TypeORM
     TypeOrmModule.forFeature([MyCustomEntity]),
+    
     ConnectorModule.forRootAsync({
       inject: [DataSource],
       useFactory: (dataSource: DataSource) => ({
         tableName: 'my_custom_connectors',
-        mappingRepository: new TypeOrmMappingRepository(dataSource.getRepository(MyCustomEntity)),
+        mappingRepository: new TypeOrmMappingRepository(
+          dataSource.getRepository(MyCustomEntity)
+        ),
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+#### C. Extending with Custom Fields (Extra Entity)
+
+You can add extra business logic or auditing columns to your table while keeping the library functional. Just extend the base entity provided by the factory:
+
+```typescript
+import { getMappingEntity } from 'nestjs-api-connector';
+import { Entity, Column } from 'typeorm';
+
+// 1. Get the base connector entity class
+const BaseConnectorEntity = getMappingEntity('enterprise_connectors');
+
+// 2. Extend it to add custom fields
+@Entity('enterprise_connectors')
+export class ExtendedConnectorEntity extends BaseConnectorEntity {
+  @Column({ nullable: true })
+  clientOwner: string;
+
+  @Column({ default: 'PROD' })
+  environment: string;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+}
+
+// 3. Register as normal
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([ExtendedConnectorEntity]),
+    ConnectorModule.forRootAsync({
+      inject: [DataSource],
+      useFactory: (dataSource: DataSource) => ({
+        mappingRepository: new TypeOrmMappingRepository(
+          dataSource.getRepository(ExtendedConnectorEntity)
+        ),
       }),
     }),
   ],
@@ -96,47 +145,22 @@ export class AppModule {}
 ```
 
 
----
 
-#### C. Extending with Custom Fields (Optional)
+### 4. Built-in API Proxy
 
-You can add extra columns to your table while keeping the library functional. Just extend the entity:
+The framework automatically exposes a standardized endpoint: `POST /connector/execute`.
 
-```typescript
-import { getMappingEntity } from 'nestjs-api-connector';
-import { Entity, Column } from 'typeorm';
-
-// 1. Get the base entity
-const BaseEntity = getMappingEntity('my_extensible_table');
-
-// 2. Extend it
-@Entity('my_extensible_table')
-export class ExtendedEntity extends BaseEntity {
-  @Column({ nullable: true })
-  description: string;
-
-  @Column({ default: 'active' })
-  status: string;
-}
-
-// 3. Use ExtendedEntity in TypeOrmModule and ConnectorModule (as shown above)
-```
-
-
-
-### 4. Direct API Access
-
-The framework automatically exposes an endpoint: `POST /connector/execute`.
-
-**Request Structure:**
+**Sample Request Payload:**
 ```json
 {
   "connectorKey": "get-products",
-  "payload": { "category": "electronics" },
+  "payload": { "id": 101 },
   "authConfig": {
     "authType": "BEARER_TOKEN",
-    "config": { "token": "your-static-token" }
-  }
+    "config": { "token": "abc-123-token" }
+  },
+  "headerData": { "X-Custom-Source": "Mobile-App" },
+  "queryParams": { "version": "v2" }
 }
 ```
 
@@ -144,38 +168,77 @@ The framework automatically exposes an endpoint: `POST /connector/execute`.
 
 ## 🔐 Authentication Standards
 
-| Auth Type | Required Config Fields | Injection Method |
+The framework ensures security by prioritizing **Database Configuration** over incoming request data.
+
+| Auth Type | Config Fields required in DB/Request | Injection Method |
 | :--- | :--- | :--- |
 | **`BEARER_TOKEN`** | `token` | `Authorization: Bearer <token>` |
 | **`BASIC`** | `username`, `password` | `Authorization: Basic <base64>` |
-| **`API_KEY`** | `keyName`, `keyValue` | `Header injection` |
-| **`OAUTH2`** | `tokenUrl`, `clientId`, `clientSecret` | `Dynamic Token Injection` |
+| **`API_KEY`** | `keyName`, `keyValue` | Custom header (e.g., `x-api-key: val`) |
+| **`OAUTH2_CLIENT_CREDENTIALS`** | `tokenUrl`, `clientId`, `clientSecret` | Automatic Token generation & caching |
 | **`NONE`** | - | No Auth |
 
-**Note on Priority**: All authentication follows a **Database-First** policy. If your DB configuration specifies an auth type, the incoming request cannot override it for security reasons.
+**Strict Validation**: If a connector is configured as `BEARER_TOKEN` in the DB, any incoming request trying to pass `BASIC` auth will be rejected with a `400 AUTH_MISMATCH`.
 
 ---
 
-## 🏗️ Transformation Types
+## 📝 Database Mapping Guide
 
-The framework supports three powerful transformation modes:
+The `mapping_config` column in your database governs how data flows. Here is the standard format for various integration scenarios.
 
-1.  **OBJECT**: Field-to-field mapping with support for:
-    *   **JSONPath**: Pick data from any depth (e.g., `$.user.profile.name`).
-    *   **Conditionals**: If-Then-Else logic based on source values.
-    *   **Transforms**: Built-in functions like `uppercase`, `roundTo2`, etc.
-2.  **ARRAY**: Optimized loop processing for lists, including root-path resolution and output wrapping.
-3.  **CUSTOM**: Direct Javascript execution for complex business logic.
+### 1. Basic Object Mapping (`type: "OBJECT"`)
+Use this for standard JSON-to-JSON transformations.
 
----
+```json
+{
+  "id": "user-connector",
+  "targetApi": {
+    "url": "https://api.external.com/users",
+    "method": "POST"
+  },
+  "requestMapping": {
+    "type": "OBJECT",
+    "mappings": [
+      { "source": "$.firstName", "target": "$.full_name" },
+      { "source": "$.meta.age", "target": "$.age", "default": 18, "required": true }
+    ]
+  }
+}
+```
 
-## 🧪 Verification Scenarios
+### 2. Array List Mapping (`type: "ARRAY"`)
+Use this when the target API returns a list of items and you need to transform each item.
 
-| Case | Expected Outcome |
-| :--- | :--- |
-| **Auth Fail** | Returns `401 Unauthorized` with clear missing-field messages. |
-| **Mapping Error** | Recovers gracefully, logs a warning, and continues with defaults. |
-| **Target API Error** | Forwards the status code and raw response from the external system. |
+```json
+{
+  "responseMapping": {
+    "type": "ARRAY",
+    "root": "$.items",         // JSONPath to the array in the source
+    "outputWrapper": "$.data", // (Optional) Wraps result in a specific key
+    "mappings": [
+      { "source": "$.id", "target": "$.userId" },
+      { "source": "$.title", "target": "$.name", "transform": "uppercase" }
+    ]
+  }
+}
+```
 
----
+
+### 3. Transforms
+Apply built-in functions during mapping.
+
+```json
+{
+  "mappings": [
+    { 
+      "source": "$.price", 
+      "target": "$.formattedPrice", 
+      "transform": "roundTo2" 
+    }
+  ]
+}
+```
+
+**Built-in Transforms:** `uppercase`, `lowercase`, `roundTo2`, `toNumber`, `toString`.
+
 

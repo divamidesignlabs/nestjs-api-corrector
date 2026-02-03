@@ -9,10 +9,7 @@ export interface MappingItem {
   required?: boolean; // If true, throws error if source path missing
 }
 
-export interface TransformDefinition {
-  type: 'FUNCTION';
-  logic: string;
-}
+// TransformDefinition is removed as custom logic is no longer supported
 
 export interface RequestMapping {
   type?: 'STATIC' | 'OBJECT'; // Default OBJECT
@@ -22,12 +19,11 @@ export interface RequestMapping {
 }
 
 export interface ResponseMapping {
-  type?: 'OBJECT' | 'ARRAY' | 'CUSTOM' | 'DIRECT'; // Default OBJECT
+  type?: 'OBJECT' | 'ARRAY' | 'DIRECT'; // Default OBJECT
   root?: string; // e.g. "$[*]" for arrays
   outputWrapper?: string; // e.g. "$.countries"
   mappings?: MappingItem[];
   defaults?: Record<string, any>;
-  logic?: string; // For CUSTOM type (Javascript code body)
 }
 
 export interface ResilienceConfig {
@@ -137,7 +133,7 @@ export interface MappingConfig {
   targetApi: TargetApiConfig;
   responseMapping?: ResponseMapping;
 
-  transforms?: Record<string, TransformDefinition>;
+
   errorHandling?: ErrorHandlingConfig;
 
 

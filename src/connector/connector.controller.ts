@@ -1,7 +1,6 @@
 import {
   Controller,
   Body,
-  Logger,
   Post,
   HttpException,
   BadRequestException,
@@ -17,7 +16,6 @@ import { AuthStrategyFactory } from './strategies/auth.strategy';
 
 @Controller('connector')
 export class ConnectorController {
-  private readonly logger = new Logger(ConnectorController.name);
 
   constructor(
     private readonly connectorEngine: ConnectorEngine,
@@ -64,7 +62,7 @@ export class ConnectorController {
       };
 
       // 4. Call Engine
-      const result = await this.connectorEngine.executeConnector(
+      const result = await this.connectorEngine.execute(
         { ...mapping.mappingConfig, authConfig: effectiveAuth },
         payload,
         context,
@@ -94,7 +92,7 @@ export class ConnectorController {
   }
 
   private handleError(error: any) {
-    this.logger.error(MESSAGES.LOG.ERROR(error.message), error.stack);
+
 
     // Case 1: Standard NestJS HttpExceptions (BadRequest, etc.)
     if (error instanceof HttpException) {

@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { TransformerService } from './transformer.service';
 import { TargetApiCaller } from './target-api-caller.service';
 import { AuthStrategyFactory, AuthContext, RequestConfig } from '../strategies/auth.strategy';
@@ -9,11 +9,9 @@ import {
   TargetApiConfig,
 } from '../interfaces/mapping-config.interface';
 import * as jsonpath from 'jsonpath';
-import { MESSAGES } from '../constants';
 
 @Injectable()
 export class ConnectorEngine {
-  private readonly logger = new Logger(ConnectorEngine.name);
 
   constructor(
     private readonly transformer: TransformerService,
@@ -25,13 +23,13 @@ export class ConnectorEngine {
    * Main entry point: Executes the full correction flow.
    * This is the orchestrator that manages the lifecycle of a request.
    */
-  async executeConnector(
+  async execute(
     mapping: MappingConfig,
     sourcePayload: any,
     context?: ExecuteContext,
   ): Promise<unknown> {
     try {
-      this.logger.log(MESSAGES.LOG.STARTING_EXECUTION(mapping.id));
+
 
       // Orchestrate the API cycle: Transform -> Call -> Transform
       const { result } = await this.performApiCycle(mapping, sourcePayload, context);
@@ -83,7 +81,7 @@ export class ConnectorEngine {
     if (!mapping.requestMapping?.mappings?.length) {
       return sourcePayload;
     }
-    return this.transformer.transform(sourcePayload, mapping.requestMapping, mapping.transforms);
+    return this.transformer.transform(sourcePayload, mapping.requestMapping);
   }
 
   private resolveUrl(url: string, pathParams?: Record<string, string>, payload?: any) {
@@ -145,7 +143,7 @@ export class ConnectorEngine {
       } catch (error) {
         lastError = error;
         if (attempt < retryCount) {
-          this.logger.warn(MESSAGES.LOG.RETRY_ATTEMPT(attempt + 1, retryDelayMs));
+
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
         }
       }
@@ -155,16 +153,16 @@ export class ConnectorEngine {
 
   private transformResponse(mapping: MappingConfig, rawResponse: any) {
     if (!mapping.responseMapping) return rawResponse;
-    return this.transformer.transform(rawResponse, mapping.responseMapping, mapping.transforms);
+    return this.transformer.transform(rawResponse, mapping.responseMapping);
   }
 
   private handleExecutionError(mapping: MappingConfig, error: any) {
-    this.logger.warn(MESSAGES.ERROR.API_EXECUTION_FAILED(error.message));
+
 
     // If an errorMapping is defined, we return a user-friendly error structure instead of throwing
     if (mapping.errorMapping) {
       const errorData = error.response?.data || { message: error.message };
-      return this.transformer.transform(errorData, mapping.errorMapping, mapping.transforms);
+      return this.transformer.transform(errorData, mapping.errorMapping);
     }
     throw error;
   }

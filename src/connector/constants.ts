@@ -16,18 +16,11 @@ export const MESSAGES = {
     TRANSFORM_FAILED: (src: string, msg: string) => `Mapping failed for ${src}: ${msg}`,
     REQUIRED_FIELD_MISSING: (field: string) => `Missing required field: ${field}`,
     ROOT_ARRAY_NOT_FOUND: (path: string) => `Root path ${path} did not resolve to an array`,
-    CUSTOM_TRANSFORM_ERROR: (msg: string) => `Custom transform error: ${msg}`,
+
     REPOSITORY_REQUIRED: 'mappingRepository or mappingRepositoryFactory required',
     INTERNAL_ERROR: 'An unexpected internal error occurred',
     API_EXECUTION_FAILED: (msg: string) => `API Execution failed: ${msg}`,
   },
-  LOG: {
-    STARTING_EXECUTION: (id: string) => `Starting execution for mapping: ${id}`,
-    CALLING_API: (method: string, url: string) => `Calling Target API: ${method} ${url}`,
-    RETRY_ATTEMPT: (attempt: number, delay: number) => 
-      `Attempt ${attempt} failed. Retrying in ${delay}ms...`,
-    ERROR: (msg: string) => `Error: ${msg}`,
-  }
 };
 
 export const AUTH_TYPES = {

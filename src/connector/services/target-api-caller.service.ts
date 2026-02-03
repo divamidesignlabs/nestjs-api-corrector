@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,7 +7,6 @@ import { MESSAGES } from '../constants';
 
 @Injectable()
 export class TargetApiCaller {
-  private readonly logger = new Logger(TargetApiCaller.name);
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -24,11 +23,7 @@ export class TargetApiCaller {
       params: config.queryParams, // Inject query params from config
     };
 
-    this.logger.debug(MESSAGES.LOG.CALLING_API(requestConfig.method, requestConfig.url));
-    this.logger.debug(`Request Config: ${JSON.stringify({
-      params: requestConfig.params,
-      headers: requestConfig.headers
-    })}`);
+
 
     try {
       const response = await firstValueFrom(
@@ -40,10 +35,7 @@ export class TargetApiCaller {
         message?: string;
         response?: { data: any };
       };
-      this.logger.error(
-        MESSAGES.ERROR.API_EXECUTION_FAILED(axiosError.message || 'Unknown error'),
-        axiosError.response?.data,
-      );
+
       throw error;
     }
   }
