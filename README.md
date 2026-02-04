@@ -241,4 +241,51 @@ Apply built-in functions during mapping.
 
 **Built-in Transforms:** `uppercase`, `lowercase`, `roundTo2`, `toNumber`, `toString`.
 
+---
+
+## 🛑 Error Response Examples
+
+The framework provides standardized error responses for different failure scenarios.
+
+### 1. Mapping Not Found (404)
+Triggered when the requested `connectorKey` does not exist in the database.
+
+```json
+{
+    "success": false,
+    "statusCode": 404,
+    "errorType": "CLIENT_ERROR",
+    "message": "Mapping with ID or Name 'jsonplaceholder-users' not found"
+}
+```
+
+### 2. Target API Error (401/500/etc.)
+Triggered when the external service returns an error. The `targetResponse` field contains the raw response from the external API.
+
+```json
+{
+    "success": false,
+    "statusCode": 401,
+    "errorType": "TARGET_API_ERROR",
+    "targetResponse": {
+        "message": "Invalid or expired token",
+        "error": "Unauthorized",
+        "statusCode": 401
+    }
+}
+```
+
+### 3. Authentication Mismatch (400)
+Triggered when the authentication type passed in the request does not match the mandatory authentication type configured in the database for that connector.
+
+```json
+{
+    "success": false,
+    "statusCode": 400,
+    "errorType": "CLIENT_ERROR",
+    "message": "Auth type BEARER_TOKE does not match required BEARER_TOKEN"
+}
+```
+
+
 
